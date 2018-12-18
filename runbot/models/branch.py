@@ -28,6 +28,8 @@ class runbot_branch(models.Model):
     job_timeout = fields.Integer('Job Timeout (minutes)', help='For default timeout: Mark it zero')
     priority = fields.Boolean('Build priority', default=False)
 
+    ignore = fields.Boolean("Don't build", default=False)
+
     @api.depends('name')
     def _get_branch_infos(self):
         """compute branch_name, branch_url, pull_head_name and target_branch_name based on name"""
