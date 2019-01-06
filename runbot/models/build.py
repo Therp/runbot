@@ -746,6 +746,9 @@ class runbot_build(models.Model):
         return -2
 
     def _job_10_test_base(self, build, log_path):
+        if build.branch_id.ignore_job == 'testing':
+            build._log('test_base', 'Ignoring test base module')
+            return -2
         build._log('test_base', 'Start test base module')
         # run base test
         self._local_pg_createdb("%s-base" % build.dest)
@@ -762,6 +765,11 @@ class runbot_build(models.Model):
         cpu_limit = 2400
         self._local_pg_createdb("%s-all" % build.dest)
         cmd, mods = build._cmd()
+        if build.branch_id.ignore_job == 'testing':
+            build._log('test_all', 'Ignoring test all module')
+            build._log('test_all', 'Installing modules')
+            cmd += ['-d', '%s-all' % build.dest, '-i', mods, '--stop-after-init', '--max-cron-threads=0']
+            return docker_run(cmd, log_path, build._path(), build._get_docker_name(), cpu_limit=cpu_limit)
         if grep(build._server("tools/config.py"), "test-enable"):
             cmd.append("--test-enable")
         cmd += ['-d', '%s-all' % build.dest, '-i', mods, '--stop-after-init', '--log-level=test', '--max-cron-threads=0']
@@ -782,7 +790,7 @@ class runbot_build(models.Model):
         return docker_run(cmd, log_path, build._path(), build._get_docker_name(), cpu_limit=cpu_limit)
 
     def _job_21_coverage_html(self, build, log_path):
-        if not build.coverage:
+        if not build.coverage or build.branch_id.ignore_job == 'testing':
             return -2
         build._log('coverage_html', 'Start generating coverage html')
         cov_path = build._path('coverage')
@@ -791,7 +799,7 @@ class runbot_build(models.Model):
         return docker_run(cmd, log_path, build._path(), build._get_docker_name())
 
     def _job_22_coverage_result(self, build, log_path):
-        if not build.coverage:
+        if not build.coverage  or build.branch_id.ignore_job == 'testing':
             return -2
         build._log('coverage_result', 'Start getting coverage result')
         cov_path = build._path('coverage/index.html')
@@ -806,6 +814,9 @@ class runbot_build(models.Model):
 
     def _job_30_run(self, build, log_path):
         # adjust job_end to record an accurate job_20 job_time
+        if build.branch_id.ignore_job == 'running':
+            build._log('run', 'Ignoring running build %s' % build.dest)
+            return -2
         build._log('run', 'Start running build %s' % build.dest)
         log_all = build._path('logs', 'job_20_test_all.txt')
         log_time = time.localtime(os.path.getmtime(log_all))

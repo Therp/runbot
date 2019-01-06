@@ -27,8 +27,11 @@ class runbot_branch(models.Model):
     modules = fields.Char("Modules to Install", help="Comma-separated list of modules to install and test.")
     job_timeout = fields.Integer('Job Timeout (minutes)', help='For default timeout: Mark it zero')
     priority = fields.Boolean('Build priority', default=False)
-
-    ignore = fields.Boolean("Don't build", default=False)
+    ignore_job = fields.Selection([
+        ('testing', "Ignore testing jobs"),
+        ('running', "Ignore running job"),
+        ('all', "Ignore all jobs"),
+    ], default=False)
 
     @api.depends('name')
     def _get_branch_infos(self):
