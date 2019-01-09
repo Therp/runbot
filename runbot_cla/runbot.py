@@ -14,6 +14,8 @@ class runbot_build(models.Model):
     _inherit = "runbot.build"
 
     def _job_05_check_cla(self, build, log_path):
+        if job_type == 'none':
+            return -2
         cla_glob = glob.glob(build._path("doc/cla/*/*.md"))
         if cla_glob:
             description = "%s Odoo CLA signature check" % build.author
