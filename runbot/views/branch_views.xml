@@ -40,7 +40,7 @@
                 <field name="name"/>
                 <field name="sticky"/>
                 <field name="priority"/>
-                <filed name="job_type"/>
+                <field name="job_type"/>
                 <field name="coverage"/>
                 <field name="state"/>
             </tree>
