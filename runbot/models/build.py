@@ -74,6 +74,15 @@ class runbot_build(models.Model):
                                    ],
                                   default='normal',
                                   string='Build type')
+    job_type = fields.Selection([
+        ('testing', 'Testing jobs only'),
+        ('running', 'Running job only'),
+        ('all', 'All jobs'),
+        ('none', 'Do not execute jobs'),
+        ],
+        compute='_get_job_type',
+        store=True
+    )
 
     def copy(self, values=None):
         raise UserError("Cannot duplicate build!")
@@ -81,6 +90,8 @@ class runbot_build(models.Model):
     def create(self, vals):
         build_id = super(runbot_build, self).create(vals)
         extra_info = {'sequence': build_id.id}
+        if 'job_type' in vals:
+            extra_info.update({'job_type': vals['job_type']})
         context = self.env.context
 
         # detect duplicate
@@ -267,6 +278,13 @@ class runbot_build(models.Model):
         for build in self:
             if build.job_start:
                 build.job_age = int(time.time() - dt2time(build.job_start))
+
+    @api.depends('branch_id')
+    def _get_job_type(self):
+        """Compute the job_type"""
+        for build in self:
+            if not build.job_type:
+                build.job_type = build.branch_id.job_type
 
     def _force(self, message=None):
         """Force a rebuild and return a recordset of forced builds"""
